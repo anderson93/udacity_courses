@@ -1,0 +1,755 @@
+Análise da qualidade dos vinhos brancos por Anderson Conceição
+==============================================================
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Carregue aqui todos os pacotes utilizados 
+# na sua análise realizada neste arquivo fonte.
+
+# Note que o parâmetro "echo" foi definido como FALSE neste código.
+# Isso previne que o código apresente resultados formatados em HTML.
+# Você deve definir echo=FALSE para todos os blocos de código no seu arquivo.
+
+library(dplyr)
+library(GGally)
+library(ggplot2)
+library(ggcorrplot)
+```
+
+# Introdução
+
+Este relatório compreende a análise de um dataset, que contém as especificações técnicas de vinhos avaliados por profissionais. Possui também, uma coluna chamada quality, que é composta pela média das notas dadas por especialistas.
+
+```{r echo=FALSE, Load_the_Data}
+# Carregamento dos dados
+wine_data <- read.csv('wineQualityWhites.csv', header=TRUE)
+```
+
+# Resumo dos dados
+
+```{r echo=FALSE, Summary}
+# Carregamento dos dados
+summary(wine_data)
+```
+
+# Seção de Gráficos Univariados
+
+```{r echo=FALSE, Quality_Plot, fig.width=9, fig.height=5}
+# Função que cálcula o intervalo de confiança da média
+ic.med <- function(x, conf = 0.95){
+   n <- length(x)
+   media <- mean(x)
+   variancia <- var(x)
+   quantis <- qt(c((1-conf)/2, 1 - (1-conf)/2), df = n-1)
+   ic <- media + quantis * sqrt(variancia/n)
+   results <- list("mean" = ic[1], "ic" = ic[2])
+   return(results)
+}
+# Plotagem do Histograma - Qualidade
+ggplot(data=wine_data, aes(wine_data$quality)) + 
+  geom_histogram(col="blue", 
+                 fill="blue", 
+                 alpha = .2,
+                 bins=30,
+                 binwidth = 1) +
+  scale_x_continuous(breaks = 1:10) + 
+  labs(title="Histograma da quantidade de vinhos por nota de qualidade") +
+  labs(x="Qualidade", y="Contagem")
+ic = ic.med(wine_data$quality)
+median = median(wine_data$quality)
+std = sd(wine_data$quality)
+```
+
+- A distribuição das notas dadas é semelhante a uma distribuição normal, o que faz sentido, dado que as notas são médias das notas dadas pelos especialistas, então é mais provável que a distribuição se concentre nos valores medianos, como 5 e 6.
+
+- A média é ``r ic$mean``, com intervalo de confiança em 95% de ``r ic$ic``. 
+- A mediana é ``r median``.
+- O desvio padrão é de ``r std``.
+
+```{r echo=FALSE, pH_Plot, fig.width=9, fig.height=5}
+# Plotagem do Histograma - pH
+ggplot(data=wine_data, aes((wine_data$pH))) + 
+  geom_histogram(col="blue", 
+                 fill="blue", 
+                 alpha = .2,
+                 bins=100) +
+  labs(title="Histograma do pH de vinhos por nota de qualidade") +
+  labs(x="pH", y="Contagem")
+ic = ic.med(wine_data$pH)
+median = median(wine_data$pH)
+std = sd(wine_data$pH)
+```
+
+- A distribuição do pH nos vinhos, é semelhante a uma distribuição normal, onde a maioria dos valores estão compreendidos entre 3,0 e 3,4. 
+
+- A média é ``r ic$mean``, com intervalo de confiança em 95% de ``r ic$ic``. 
+- A mediana é ``r median``.
+- O desvio padrão é de ``r std``.
+
+```{r echo=FALSE, Density_Plot, fig.width=9, fig.height=5}
+# Plotagem do Histograma - Densidade
+ggplot(data=wine_data, aes(wine_data$density)) + 
+  geom_histogram(col="blue", 
+                 fill="blue", 
+                 alpha = .2,
+                 bins=100) +
+  labs(title="Histograma da densidade [g/" ~ cm^3 ~ "] de vinhos por nota de qualidade") +
+  labs(x= bquote("Densidade expression [g/" ~ cm^3 ~ "]"), y="Contagem")
+ic = ic.med(wine_data$density)
+median = median(wine_data$density)
+std = sd(wine_data$density)
+```
+
+- A distribuição da densidade dos vinhos, é semelhante a uma distribuição assimétrica positiva, onde a maioria dos valores estão abaixo de 1.
+
+- A média é ``r ic$mean``, com intervalo de confiança em 95% de ``r ic$ic``. 
+- A mediana é ``r median``.
+- O desvio padrão é de ``r std``.
+
+```{r echo=FALSE, TSD_Plot, fig.width=9, fig.height=5}
+# Plotagem do Histograma - Total de SO_2
+ggplot(data=wine_data, aes(wine_data$total.sulfur.dioxide)) + 
+  geom_histogram(col="blue", 
+                 fill="blue", 
+                 alpha = .2,
+                 bins=100) +
+  labs(title="Histograma do total de " ~ SO[2] ~"[mg/" ~ dm^3 ~ "] de vinhos por nota de qualidade") +
+  labs(x="Total de " ~ SO[2] ~" [mg/" ~ dm^3 ~ "]", y="Contagem")
+ic = ic.med(wine_data$total.sulfur.dioxide)
+median = median(wine_data$total.sulfur.dioxide)
+std = sd(wine_data$total.sulfur.dioxide)
+```
+
+- A distribuição de $SO_{2}$ total, é semelhante a uma distribuição levemente assimétrica positiva, onde a maioria dos valores estão compreendidos entre 100 e 200.
+
+- A média é ``r ic$mean``, com intervalo de confiança em 95% de ``r ic$ic``. 
+- A mediana é ``r median``.
+- O desvio padrão é de ``r std``.
+
+```{r echo=FALSE, FSD_Plot, fig.width=9, fig.height=5}
+# Plotagem do Histograma - SO_2 Livre
+ggplot(data=wine_data, aes(wine_data$free.sulfur.dioxide)) + 
+  geom_histogram(col="blue", 
+                 fill="blue", 
+                 alpha = .2,
+                 bins=100) +
+  labs(title="Histograma da quantia de " ~ SO[2] ~" livre [mg/"~dm^3~"] de vinhos por nota de qualidade") +
+  labs(x="" ~ SO[2] ~" livre [mg/" ~ dm^3 ~ "]", y="Contagem")
+ic = ic.med(wine_data$free.sulfur.dioxide)
+median = median(wine_data$free.sulfur.dioxide)
+std = sd(wine_data$free.sulfur.dioxide)
+```
+
+- A distribuição de $SO_{2}$ livre é assimétrica positiva, onde a maioria dos valores estão compreendidos entre 23 e 46.
+
+- A média é ``r ic$mean``, com intervalo de confiança em 95% de ``r ic$ic``. 
+- A mediana é ``r median``.
+- O desvio padrão é de ``r std``.
+
+# Plotagem do Histograma - Clorídeos
+```{r echo=FALSE, Chlorides_Plot, fig.width=9, fig.height=5}
+ggplot(data=wine_data, aes(wine_data$chlorides)) + 
+  geom_histogram(col="blue", 
+                 fill="blue", 
+                 alpha = .2,
+                 bins=100) +
+  labs(title="Histograma da quantidade de Cloretos [g/"~dm^3~"] dos vinhos por nota de qualidade") +
+  labs(x="Cloretos [g/" ~ dm^3 ~ "]", y="Contagem")
+ic = ic.med(wine_data$chlorides)
+median = median(wine_data$chlorides)
+std = sd(wine_data$chlorides)
+```
+
+- A distribuição dos Cloretos é semelhante a uma distribuição leptocúrtica, onde a maioria dos dados se compreendem entre 0.036 e 0.05.
+
+- A média é ``r ic$mean``, com intervalo de confiança em 95% de ``r ic$ic``. 
+- A mediana é ``r median``.
+- O desvio padrão é de ``r std``.
+
+```{r echo=FALSE, Sugar_Plot, fig.width=9, fig.height=5}
+# Plotagem do Histograma - Açúcar Residual
+ggplot(data=wine_data, aes(wine_data$residual.sugar)) +
+  geom_histogram(col="blue", 
+                 fill="blue", 
+                 alpha = .2,
+                 bins=100) +
+#  geom_vline(xintercept = 42,
+  #           linetype="dotted", 
+ #            color = "darkred", 
+#             size=1) +
+  labs(title="Histograma do açúcar residual [g/" ~ dm^3 ~ "] dos vinhos por nota de qualidade") +
+  labs(x="Açúcar Residual [g/" ~ dm^3 ~ "]", y="Contagem")
+ic = ic.med(wine_data$residual.sugar)
+median = median(wine_data$residual.sugar)
+std = sd(wine_data$residual.sugar)
+```
+
+- A distribuição é semelhante a uma distribuição levemente assimétrica positiva, onde a maioria dos dados estão compreendidos entre 1.7 a 9.9. A linha vermelha, indica quando o vinho é considerado doce, podemos ver que neste dataset há pouquíssimos vinhos doces.
+
+- A média é ``r ic$mean``, com intervalo de confiança em 95% de ``r ic$ic``. 
+- A mediana é ``r median``.
+- O desvio padrão é de ``r std``.
+
+```{r echo=FALSE, Citric_Plot, fig.width=9, fig.height=5}
+# Plotagem do Histograma - Ácido Cítrico
+ggplot(data=wine_data, aes(wine_data$citric.acid)) + 
+  geom_histogram(col="blue", 
+                 fill="blue", 
+                 alpha = .2,
+                 bins=100) +
+  labs(title="Histograma do ácido cítrico [g/" ~ dm^3 ~ "] dos vinhos por nota de qualidade") +
+  labs(x="Ácido cítrico [g/" ~ dm^3 ~ "]", y="Contagem")
+ic = ic.med(wine_data$citric.acid)
+median = median(wine_data$citric.acid)
+std = sd(wine_data$citric.acid)
+```
+
+- A distribuição do Ácido Cítrico nos vinhos do dataset, assemelha-se a uma distribuição tipo t. Onde a maioria dos valores estão compreendidos entre 0.27 a 0.39.
+
+- A média é ``r ic$mean``, com intervalo de confiança em 95% de ``r ic$ic``. 
+- A mediana é ``r median``.
+- O desvio padrão é de ``r std``.
+
+```{r echo=FALSE, VA_Plot, fig.width=9, fig.height=5}
+# Plotagem do Histograma - Acidez Volátil
+ggplot(data=wine_data, aes(wine_data$volatile.acidity)) + 
+  geom_histogram(col="blue", 
+                 fill="blue", 
+                 alpha = .2,
+                 bins=100) +
+  labs(title="Histograma da acidez volátil [g/" ~ dm^3 ~ "] dos vinhos por nota de qualidade") +
+  labs(x="Acidez Volátil [g/" ~ dm^3 ~ "]", y="Contagem")
+ic = ic.med(wine_data$volatile.acidity)
+median = median(wine_data$volatile.acidity)
+std = sd(wine_data$volatile.acidity)
+```
+
+- A distribuição da acidez volátil, é uma distribuição que assemelha-se a uma distribuição assimétrica positiva. A maioria dos vinhos se concentram-se entre os valores 0.21 a 0.32.
+
+- A média é ``r ic$mean``, com intervalo de confiança em 95% de ``r ic$ic``. 
+- A mediana é ``r median``.
+- O desvio padrão é de ``r std``.
+
+```{r echo=FALSE, FA_Plot, fig.width=9, fig.height=5}
+# Plotagem do Histograma - Acidez Fixa
+ggplot(data=wine_data, aes(wine_data$fixed.acidity)) + 
+  geom_histogram(col="blue", 
+                 fill="blue", 
+                 alpha = .2,
+                 bins=100) +
+  labs(title="Histograma da acidez fixa [g/" ~ dm^3 ~ "] de vinhos por nota de qualidade") +
+  labs(x="Acidez fixa [g/" ~ dm^3 ~ "]", y="Contagem")
+ic = ic.med(wine_data$fixed.acidity)
+median = median(wine_data$fixed.acidity)
+std = sd(wine_data$fixed.acidity)
+```
+
+- A distribuição da Acidez Fixa dos vinhos, assemelha-se a uma distribuição normal. A maioria dos valores estão compreendidos entre 6.3 e 7.3.
+
+- A média é ``r ic$mean``, com intervalo de confiança em 95% de ``r ic$ic``. 
+- A mediana é ``r median``.
+- O desvio padrão é de ``r std``.
+
+# Análise Univariada
+
+### Qual é a estrutura do conjunto de dados?
+
+```{r echo=FALSE, Str_Data}
+# Estrutura dos dados
+str(wine_data)
+```
+
+### Quais são os principais atributos de interesse deste conjunto de dados?
+
+Existem 4898 vinhos brancos no dataset, onde são compostos por 12 variáveis, como Ácidez Fixa, Ácidez Volátil, Ácido Cítrico, Açúcar Residual, Cloretos, Dióxido de Enxofre Livre, Dióxido de Enxofre Total, Densidade, pH, Sulfatos, Álcool e Qualidade. O principal atributo aqui, é a qualidade, que é composta da média das notas de 3 enólogos que provaram os vinhos.
+
+### Quais outros atributos você? acha que podem lhe auxiliar na investigação destes atributos de interesse?
+
+De acordo com minha pesquisa através de artigos de enologia, suponho que os atributos que mais influenciam o gosto e a qualidade do vinho são:
+- Ácidez (fixa e volátil)
+- Ácido Cítrico
+- Dióxido de Enxofre (livre e total)
+- pH
+
+### Você criou novas variáveis a partir dos atributos existentes no conjunto de dados?
+
+Não achei necessário a criação de novas variáveis para a análise.
+
+### Dos atributos investigados, distribuições incomuns foram encontradas? Você aplicou operações nos dados para limpá-los, ajustá-los ou mudar a forma dos dados? Se sim, por quê?
+
+Em algumas variáveis, foi possível identificar distribuições assimétricas e positivas, o que indica que algumas características do vinho tendem a serem as mesmas, como por exemplo o nível de cloretos (que de acordo com a literatura, a concentração de cloretos em vinho sofre influência do país produtor e encontra-se em maiores concentrações nos vinhos de países que utilizam irrigação com água salina, ou que possuem solos salobros), a densidade (que define o "corpo do vinho", que significa quão leve ou denso é um vinho no paladar, influenciando assim a qualidade) e o açúcar residual (proveniente do processo de fermentação).
+
+Na próxima seção, irei fazer a eliminação dos outliers, para não somente melhor visualizações, mas como também para capturarmos as principais relações neste dataset, pois os outliers podem por vezes nos ofuscar para caminhos diferentes, pois como na descrição, o dataset é composto por variantes brancos dos vinhos verdes portugueses, sendo então mais importante a maioria dos valores do que os outliers.
+
+# Removendo Outliers
+
+- Criarei então uma função que dividirá cada categoria em quintis(0.2, 0.4, 0.6, 0.8), para então eliminar os valores que sejam maiores que 1,5 * último_quintil(0.8) e que sejam menores que 1,5 * primeiro_quintil(0.2). Eliminando assim os outliers, nos teremos uma novo sumário dos dados:
+
+```{r echo=FALSE, Outliers, fig.width=9, fig.height=5}
+# Remove outliers from a column
+remove_outliers <- function(x, na.rm = TRUE, ...) {
+  qnt <- quantile(x, probs=c(.20, .80), na.rm = na.rm, ...)
+  H <- 1.5 * IQR(x, na.rm = na.rm)
+  y <- x
+  y[x < (qnt[1] - H)] <- NA
+  y[x > (qnt[2] + H)] <- NA
+  y
+}
+
+# Removes all outliers from a data set
+remove_all_outliers1 <- function(df){
+  # We only want the numeric columns
+  df[,sapply(df, is.numeric)] <- lapply(df[,sapply(df, is.numeric)], remove_outliers)
+  df <- df[complete.cases(df), ]
+  df <- df %>% dplyr::select(-X)
+}
+
+wine_clean <- remove_all_outliers1(wine_data)
+summary(wine_clean)
+```
+
+- Vemos que o nova nota mínima da qualidade é  ``r min(wine_clean$quality)`` e o novo máximo é ``r max(wine_clean$quality)``.
+
+# Seção de Gráficos Bivariados
+
+```{r echo=FALSE, pH_Bivar_Plot, fig.width=9, fig.height=5, warning=FALSE, message=FALSE}
+# Plotando gráficos de dispersão e diagrama de caixa  - pH vs Qualidade
+ggplot(data = wine_clean, aes(x = quality, y = pH, fill=as.factor(quality) ) ) +
+  geom_jitter( width = 0.25, 
+               alpha = .2) +
+  geom_boxplot(alpha = .3,
+               color = 'blue1') +
+  scale_colour_manual(name="Linhas",
+                      values=c(valores_máximos="darkorange", 
+                               valores_médios="darkolivegreen4", 
+                               valores_mínimos="darkred"))+
+  scale_x_continuous(breaks=1:10) +
+  labs(x="Qualidade", y="pH") +
+  labs(title="Histograma do pH dos vinhos por nota de qualidade")
+```
+
+- Esse é um gráfico de dispersão, que mostra a distribuição do pH dos vinhos em relação às notas atribuidas a eles. Foi plotado também um diagrama de caixa, para que a característica dos dados fossem melhor visualizadas. É interessante ver como a distribuição dos valores de pH variam ao longo dos níveis de qualidade e se afunilam quanto maior a nota, indicando talvez que seja difícil manter o controle das propriedades fisico-químicas ao longo do processo de criação do vinho.
+
+```{r echo=FALSE, Sulphates_Bivar_Plot, fig.width=9, fig.height=5, message=FALSE, warning=FALSE}
+# Plotando gráficos de dispersão e diagrama de caixa  - Sulfatos vs Qualidade
+ggplot(data = wine_clean, aes(x = quality, y = sulphates, fill=as.factor(quality) ) ) +
+  geom_jitter( width = 0.25,  alpha = .2) +
+  geom_boxplot(alpha = .3,
+               color = 'blue1') +
+  scale_colour_manual(name="Linhas",
+    values=c(valores_máximos="darkorange", valores_médios="darkolivegreen4", valores_mínimos="darkred"))+
+  scale_x_continuous(breaks=1:10) +
+  labs(x="Qualidade", y="Sulfatos [g/" ~ dm^3 ~ "]") +
+  labs(title="Histograma do Sulfatos [g/" ~ dm^3 ~ "] dos vinhos por nota de qualidade")
+```
+
+- Nos sulfatos, os dados são tão esparsos na nota máxima, que a faixa inter-quartil é grande o bastante para compreender as faixas de todas as outras notas, mostrando talvez uma baixa correlação com a qualidade.
+
+```{r echo=FALSE, Alcohol_Bivar_Plot, fig.width=9, fig.height=5, warning=FALSE, message=FALSE}
+# Plotando gráficos de dispersão e diagrama de caixa  - Graduação alcóolica vs Qualidade
+ggplot(data = wine_clean, aes(x = quality, y = alcohol, fill=as.factor(quality) ) ) +
+  geom_jitter( width = 0.25, alpha = .2) +
+  geom_boxplot(alpha = .3,
+               color = 'blue1') +
+  scale_colour_manual(name="Linhas",
+    values=c(valores_máximos="darkorange", valores_médios="darkolivegreen4", valores_mínimos="darkred"))+
+  scale_x_continuous(breaks=1:10) +
+  labs(x="Qualidade", y="Teor alcoólico [%]") +
+  labs(title="Histograma da [%] alcoólico dos vinhos por nota de qualidade")
+```
+
+- O teor alcóolico aumenta à medida que a nota aumenta, mostrando uma grande correlação linear e que os melhores vinhos tendem a terem o maior teor alcóolico também.
+
+```{r echo=FALSE, Density_Bivar_Plot, fig.width=9, fig.height=5, message=FALSE}
+# Plotando gráficos de dispersão e diagrama de caixa  - Densidade vs Qualidade
+ggplot(data = wine_clean, aes(x = quality, y = density, fill=as.factor(quality) ) ) +
+  geom_jitter( alpha = .2, width = 0.25) +
+  geom_boxplot(alpha = .3,
+               color = 'blue1') +
+  scale_colour_manual(name="Linhas",
+    values=c(valores_máximos="darkorange", valores_médios="darkolivegreen4", valores_mínimos="darkred"))+
+  scale_x_continuous(breaks=1:10) +
+  labs(x="Qualidade", y="Densidade [g/" ~ cm^3 ~ "]") +
+  labs(title="Histograma da densidade [g/" ~ cm^3 ~ "] dos vinhos por nota de qualidade")
+```
+
+- A densidade é menor nos vinhos de nota mais alta, isso tem haver com o processo de fermentação que ocorre durante o processo de fabricação do vinho. Durante esse processo, parte do açúcar é convertido para álcool e outras substâncias. Como o açúcar é pesado, ao ser transformado em álcool, que possui uma densidade menor que $1g/cm^3$, ocorre a diminuição da densidade. Como já sabemos que os melhores vinhos possuem uma alta correlação com teores alcóolicos altos, sabemos que há um impacto também na densidade.
+
+```{r echo=FALSE, TSD_Bivar_Plot, fig.width=9, fig.height=5, message=FALSE}
+# Plotando gráficos de dispersão e diagrama de caixa  - Total de SO_2 vs Qualidade
+ggplot(data = wine_clean, aes(x = quality, y = total.sulfur.dioxide, fill=as.factor(quality) ) ) +
+  geom_jitter( alpha = .2, width = 0.25) +
+  geom_boxplot(alpha = .3,
+               color = 'blue1') +
+  scale_colour_manual(name="Linhas",
+    values=c(valores_máximos="darkorange", valores_médios="darkolivegreen4", valores_mínimos="darkred"))+
+  scale_x_continuous(breaks=1:10) +
+  labs(x="Qualidade", y= ""~ SO[2] ~ "[mg/" ~ dm^3 ~ "]") +
+  labs(title="Histograma do total de "~SO[2]~ "[mg/" ~ dm^3 ~ "] dos vinhos por nota de qualidade")
+```
+
+- Vemos mais uma vez esse fenômeno, onde quanto maior a nota mais restrita é a faixa de valores, porésm ela permanece relativamente densa. É notório que o dataset está desbalanceado categoricamente também, dado a grande divergência em números de valores entre as categorias.
+
+```{r echo=FALSE, FSD_Bivar_Plot, fig.width=9, fig.height=5, message=FALSE}
+# Plotando gráficos de dispersão e diagrama de caixa  - SO_2 livre vs Qualidade
+ggplot(data = wine_clean, aes(x = quality, y = free.sulfur.dioxide, fill=as.factor(quality) ) ) +
+  geom_jitter( alpha = .2, width = 0.25) +
+  geom_boxplot(alpha = .3,
+               color = 'blue1') +
+  scale_colour_manual(name="Linhas",
+    values=c(valores_máximos="darkorange", valores_médios="darkolivegreen4", valores_mínimos="darkred"))+
+  scale_x_continuous(breaks=1:10) +
+  labs(x="Qualidade", y="" ~ SO[2] ~" livre [mg/" ~ dm^3 ~ "]") +
+  labs(title="Histograma da forma livre de " ~ SO[2] ~" [mg/" ~ dm^3 ~ "] dos vinhos por nota de qualidade")
+```
+
+- Neste gráfico vemos que os valores se dividem bem ao longo da faixa da grande maioria dos valores das outras notas, porém as piores notas, como 4, tendem a serem dentre os menores valores de $SO_{2}$ livre.
+
+```{r echo=FALSE, Chlorides_Bivar_Plot, fig.width=9, fig.height=5, message=FALSE}
+# Plotando gráficos de dispersão e diagrama de caixa  - Clorídeos vs Qualidade
+ggplot(data = wine_clean, aes(x = quality, y = chlorides, fill=as.factor(quality) ) ) +
+  geom_jitter( alpha = .2, width = 0.25) +
+  geom_boxplot(alpha = .3,
+               color = 'blue1') +
+  scale_colour_manual(name="Linhas",
+    values=c(valores_máximos="darkorange", valores_médios="darkolivegreen4", valores_mínimos="darkred"))+
+  scale_x_continuous(breaks=1:10) +
+  labs(x="Qualidade", y="Cloretos [g/" ~ dm^3 ~ "]") +
+  labs(title="Histograma de Cloretos [g/" ~ dm^3 ~ "] dos vinhos por nota de qualidade")
+```
+
+- Neste gráfico, vemos que os melhores vinhos tendem a terem o menor teor de cloretos na composição.
+
+```{r echo=FALSE, Sugar_Bivar_Plot, fig.width=9, fig.height=5, message=FALSE}
+# Plotando gráficos de dispersão e diagrama de caixa  - Açúcar Residual vs Qualidade
+ggplot(data = wine_clean, aes(x = quality, y = residual.sugar, fill=as.factor(quality) ) ) +
+  geom_jitter( alpha = .2, width = 0.25) +
+  geom_boxplot(alpha = .3,
+               color = 'blue1') +
+  scale_colour_manual(name="Linhas",
+                      values=c( vinhos_doces="deeppink3", valores_máximos="darkorange",
+                                valores_médios="darkolivegreen4", valores_mínimos="darkred"))+
+  scale_x_continuous(breaks=1:10) +
+  labs(x="Qualidade", y="Açúcar residual [g/" ~ dm^3 ~ "]") +
+  labs(title="Histograma açúcar residual [g/" ~ dm^3 ~ "] dos vinhos por nota de qualidade")
+```
+
+- Neste gráfico vemos que apesar dos melhores vinhos serem os com menor teor de açúcar residual, ainda é possível achar um bom número de vinhos bons com mais açúcar residual. 
+
+```{r echo=FALSE, Citric_Bivar_Plot, fig.width=9, fig.height=5}
+# Plotando gráficos de dispersão e diagrama de caixa  - Ácido Cítrico vs Qualidade
+ggplot(data = wine_clean, aes(x = quality, y = citric.acid, fill=as.factor(quality) ) ) +
+  geom_jitter( alpha = .2, width = 0.25) +
+  geom_boxplot(alpha = .3,
+               color = 'blue1') +
+  scale_colour_manual(name="Linhas",
+    values=c(valores_máximos="darkorange", valores_médios="darkolivegreen4", valores_mínimos="darkred"))+
+  scale_x_continuous(breaks=1:10) +
+  labs(x="Qualidade", y="Ácido Cítrico [g/" ~ dm^3 ~ "]") +
+  labs(title="Histograma ácido cítrico [g/" ~ dm^3 ~ "] dos vinhos por nota de qualidade")
+```
+
+- Neste gráfico, vemos que os melhores vinhos tendem a estarem em uma faixa bem definida de valores.
+
+```{r echo=FALSE, Univariate_Plots19, fig.width=9, fig.height=5, message=FALSE}
+# Plotando gráficos de dispersão e diagrama de caixa  - Acidez Volátil vs Qualidade
+ggplot(data = wine_clean, aes(x = quality, y = volatile.acidity, fill=as.factor(quality) ) ) +
+  geom_jitter( alpha = .2, width = 0.25) +
+  geom_boxplot(alpha = .3,
+               color = 'blue1') +
+  scale_x_continuous(breaks=1:10) +
+  labs(x="Qualidade", y="Ácidez volátil [g/" ~ dm^3 ~ "]") +
+  labs(title="Histograma da ácidez volátil [g/" ~ dm^3 ~ "] dos vinhos por nota de qualidade")
+```
+
+- Não vemos grandes relações entre a qualidade e os níveis de acidez volátil ao longo das qualidades dos vinhos.
+
+```{r echo=FALSE, Univariate_Plots20, fig.width=9, fig.height=5, message=FALSE}
+# Plotando gráficos de dispersão e diagrama de caixa  - Acidez Fixa vs Qualidade
+ggplot(data = wine_clean, aes(x = quality, y = fixed.acidity, fill=as.factor(quality) ) ) +
+  geom_jitter(alpha = .2, width = 0.25) +
+  geom_boxplot(alpha = .3,
+               color = 'blue1') +
+  scale_x_continuous(breaks=1:10) +
+  labs(x="Qualidade", y="Acidez fixa [g/" ~ dm^3 ~ "]") +
+  labs(title="Histograma de acidez fixa [g/" ~ dm^3 ~ "] vinhos por nota de qualidade")
+```
+
+- Vemos que não há muitas diferenças entre os valores, senão na última nota, onde os valores reduzem um pouco a faiza, mas a média permanece bastante similar às outras categorias.
+
+```{r echo=FALSE, Correlation_Plots, fig.width=9, fig.height=8}
+# Plotando a Matriz de Correlação Linear vs Qualidade
+ggcorrplot(cor(wine_clean %>% mutate(quality = as.numeric(quality))),
+           hc.order=TRUE,
+           lab=TRUE,
+           type='lower')+
+  labs(title="Matriz de correlação linear")
+```
+
+- Na matriz de correlação linear, vemos algumas relações fortes entre alguns atributos.
+
+- A qualidade tem uma forte relação com a graduação alcóolica dos vinhos e uma leve relação inversamente proporcional com a densidade. Há também, outras relações mais fracas, como o total de $SO_{2}$, os Cloretos e a Acidez Volátil.
+
+- O álcool, tem uma forte relação com a Densidade, também tem relações fortes e inversamente proporcionais com o Total de $SO_{2}$, o $SO_{2}$ livre, os Cloretos e o açúcar residual.
+
+- Os Sulfatos não apresentam relações fortes com as demais variáveis além da fraca relação com o pH.
+
+- O pH possui uma relação inversamente proporcional com a acidez fixa.
+
+- A densidade possui fortes relações com o total de $SO_{2}$ e o açúcar residual, e possui também relações fracas com o total de $SO_{2}$, os Cloretos e a acidez fixa.
+
+- O Total de $SO_{2}$ tem uma relação com os $SO_{2}$ livres e também com o açúcar residual.
+
+- O $SO_{2}$ livres possuem uma relação com o açúcar residual, possui também fracas relações com os Cloretos, a Acidez Cítrica e a Acidez Volátil.
+
+- Os cloretos possuem fracas relações com o açúcar residual, a acidez cítrica e a acidez volátil.
+
+- O açúcar residual tem relações fracas com o ácido cítrico, a acidez volátil e a acidez fixa.
+
+- O ácido cítrico possui uma forte relação com a acidez fixa.
+
+# Análise Bivariada
+
+### Discuta sobre alguns dos relacionamentos observados nesta parte da investigação. Como os atributos de interesse variaram no conjunto de dados?
+
+- O álcool possui uma forte correlaçào negativa com a densidade.
+
+- Alguns atributos se relacionam melhor de formas não lineares, com o açúcar residual e o álcool, assim como a densidade e o álcool.
+
+- O total de $SO_{2}$ tem uma correlação inversa bastante notória com o álcool.
+
+- O ácido cítrico possui uma forte relação com a acidez fixa.
+
+### Você observou algum relacionamento interessante entre os outros atributos (os que não são de interesse)?
+
+- Em todos os gráficos, havia uma forma de afunilação à uma faixa específica, quando considerado as maiores notas, indicando talvez uma dificuldade de manter os vinhos durante a produção dentro dessa faixa de valores.
+
+### Qual foi o relacionamento mais forte encontrado?
+
+- Foi o da densidade com o álcool, de -0,8 e do açúcar residual e a densidade, de 0,8.
+
+# Seção de Gráficos Multivariados
+
+- A partir da matriz de correlação acima criada, irei reproduzir algumas variáveis que se mostraram interessantes, criando subsets para analisa-las mais de perto.
+
+```{r echo=FALSE, Multivariate_Plots, fig.width=12, fig.height=9, warning=FALSE}
+# Função auxiliar para plotagem das matrizes de correlação linear
+my_fn <- function(data, mapping, ...){
+  p <- ggplot(data = data, mapping = mapping) + 
+    geom_jitter( alpha = .6, width = 0.00001, aes(colour = as.factor(quality))) +
+    #geom_point(aes(colour = as.factor(quality))) + 
+    scale_color_brewer(type='qual', direction = -1) +
+    geom_smooth(method=loess, fill="red", color="red", ...) +
+    geom_smooth(method=lm, fill="blue", color="blue", ...)
+  p
+}
+# Matriz de Correlação Linear de um subset
+ggpairs(data = wine_clean %>% dplyr::select(-fixed.acidity,
+                                           -citric.acid,
+                                           -residual.sugar,
+                                           -free.sulfur.dioxide,
+                                           -pH,
+                                           -sulphates),
+        progress = FALSE,
+        lower = list(continuous = my_fn))  
+```
+
+- A parte superior do gráfico, mostra as correlações lineares entre os valores. A diagonal, mostra a distribuição de cada variável individualmente. A parte inferior do gráfico plota as relações entre as variáveis através de um gráfico de dispersão. Nele, também está contido em linha azul uma regressão linear e em vermelho, uma regressão polinomial, onde o intervalo de confiança é mostrada em vermelho claro.
+
+- Eu escolhi esses atributos, pois eles possuem os 5 maiores níveis de correlação linear.
+
+- Vemos o quão distinto é nos gráficos de dispersão abaixo, as diferenças entre as notas 5 (amarelo) e 6 (laranja), com as notas 7 (roxo) sempre aparecendo nas bordas das notas 6, sempre se distanciando o máximo do amarelo.
+
+- Nesse gráfico, vemos algumas relações fortes. O álcool, possui fortes relações inversas com a densidade, o $SO_{2}$ total e o açúcar residual. 
+
+- A densidade também possui fortes relações, como com o açúcar residual e o $SO_{2}$ total.
+
+```{r echo=FALSE, Multivariate_Plots0, fig.width=11, fig.height=9}
+# Plotando a matriz de Correlação Linear de um subset
+ggpairs(data = wine_clean %>% dplyr::select(-volatile.acidity,
+                                           -alcohol,
+                                           -total.sulfur.dioxide,
+                                           -chlorides,
+                                           -density),
+        progress = FALSE,
+        lower = list(continuous = my_fn),
+        aes(fig.width=16, fig.height = 16))
+```
+
+- Apesar das notas 5 (amarelo), 6 (laranja) e 7 (roxo) se mostrarem bem misturadas, a nota 4 (azul) se mostra bem isolada, nas beiradas dos gráficos. Mostrando talvez, limites que definem bem quando um vinho é mais provável de receber uma nota baixa, no caso limites intoleráveis.
+
+```{r echo=FALSE, Multivariate_Plots1, fig.width=9, fig.height=5}
+# Plotando gráfico de Dispersão - Ácido Cítrico vs Acidez Fixa
+ggplot(data = wine_clean, aes(colour = as.factor(quality), 
+                             y = citric.acid , 
+                             x = fixed.acidity, 
+                             group=1,
+                             palette())) +
+  geom_jitter( alpha = .6, width = 0.05) +
+  scale_color_brewer(type='qual') +
+  geom_smooth(method=loess, aes(color='Regressão Polinomial') )+
+  labs(title="Gráfico de dispersão do ácido cítrico  [g/" ~ dm^3 ~ "] com a acidez fixa  [g/" ~ dm^3 ~ "]")+
+  labs(x="Acidez fixa [g/" ~ dm^3 ~ "]", y="Ácido Cítrico [g/" ~ dm^3 ~ "]")
+```
+
+- A maioria dos valores de nota 7 (amarelo) e 6 (laranja) se concentram no meio misturados, porém os de nota 5(roxo) se concentram mais perifericamente a essas distribuições.
+
+- Interessante como se forma uma linha quando o ácido cítrico é perto de 0.5 $g/dm^3$, mostrando que é uma quantia bastante comum de ácido cítrico, apesar dos diferentes níveis de acidez fixa.
+
+```{r echo=FALSE, Multivariate_Plots2, fig.width=9, fig.height=5}
+# Plotando gráfico de dispersão - Sulfatos vs Álcool
+ggplot(data = wine_clean, aes(colour = as.factor(quality), y = sulphates , x = alcohol, group=1)) +
+  geom_jitter( alpha = .6, width = 0.5) +
+  scale_color_brewer(type='qual') +
+  scale_y_log10()+
+  geom_smooth(method=loess, aes(color='Regressão Polinomial') )+
+  labs(title="Gráfico de dispersão de Sulfatos(log10)[g/" ~ dm^3 ~ "] por Álcool [%]", x= "Álcool [%]", y="Sulfatos [g/" ~ dm^3 ~ "]")
+```
+
+- É interessante ver nesse gráfico a ascenção das notas dos vinhos ao longo do eixo do álcool e do sulfato. À esquerda temos a maioria nota 5 (lilás), à direita é predominantemente nota 7 (amarelo), no centro temos a transição de notas 6 (laranja) e em seguida notas 8 (azul). 
+
+- Encontramos alguns pontos da nota 8 (azul) no começo, mas a maioria está na direita do gráfico, prevalecendo no lado do alto teor alcóolico.
+
+```{r echo=FALSE, Multivariate_Plots3, fig.width=9, fig.height=5}
+# Plotando gráfico de dispersão - Densidade vs Álcool
+ggplot(data = wine_clean, aes(colour = as.factor(quality), y = density , x = alcohol, group=1)) +
+  geom_jitter( alpha = .6, width = 2.5) +
+  scale_color_brewer(type='qual') +
+  geom_smooth(method=loess, aes(color='Regressão Polinomial') )+
+  labs(title="Gráfico de dispersão da Densidade [g/" ~ cm^3 ~ "] por Álcool [%]", x="Álcool [%]", y="Densidade [g/" ~ cm^3 ~ "]")
+```
+
+- Nesse gráfico, visualizamos que em todas as faixas de valores existem vinhos que possuem nota 6 (laranja), entretanto é mais provável que um vinho seja nota 5 (lilás) quando mais próximo da densidade de valor 1; confirmando o que vemos no gráfico anterior, onde um vinho pode ser bom independente da graduação alcóolica.
+
+- Entretanto, vemos como a concentração dos vinhos bons sempre aumenta quando se aumenta o teor alcóolico.
+
+```{r echo=FALSE, Multivariate_Plots4, fig.width=9, fig.height=5}
+# Plotando gráfico de dispersão - Açúcar residual vs Álcool
+ggplot(data = wine_clean, aes(colour = as.factor(quality), y = residual.sugar , x = alcohol, group=1)) +
+  geom_jitter( alpha = 0.6, width = 0.5) +
+  scale_y_log10() +
+  scale_color_brewer(type='qual') +
+  geom_smooth(method=loess, aes(color='Regressão Polinomial') )+
+  labs(title="Gráfico de dispersão do Açúcar Residual (log10)[g/" ~ dm^3 ~ "] por Álcool [%]",
+       x="Álcool [%]",
+       y="Açúcar Residual [g/" ~ dm^3 ~ "]")
+```
+
+- Nesse gráfico vemos que realmente os valores mais baixos de álcool detêm a maioria das notas baixas.
+
+- É interessante ver essas duas separações no começo do gráfico quando o açúcar e o teor alcóolico estão com níveis baixos.
+
+# Análise Multivariada
+
+### Discuta sobre os relacionamentos observados nesta parte da investigação. Quais atributos que fortaleceram os demais na observação das variáveis de interesse?
+
+- Para visualizar melhor o álcool, eu usei os sulfatos, o açúcar residual e a densidade. Através do uso dessas variáveis, foi possível a qualidade do vinho em relação à graduação alcóolica. 
+
+### Interações surpreendentes e/ou interessantes foram encontradas entre os atributos?
+
+- Foi interessante notar, que de acordo com os artigos enólogos pesquisados, havia esse trade-off entre graduação alcóolica e o açúcar residual, pois devido ao processo de fermentação um vira no outro e vice-versa. Também foi notório a relação do álcool com a densidade, pois como o álcool tem densidade menor que 1, tem também essa relação em que quanto mais álcool, menor a densidade do vinho.
+
+# Gráficos Finais e Sumário
+
+### Primeiro Gráfico
+
+```{r echo=FALSE, warning=FALSE, Plot_One, fig.width=9, fig.height=5}
+ggplot(data = wine_clean, aes(colour = as.factor(quality), y = total.sulfur.dioxide , x = alcohol, group=1)) +
+  geom_jitter( alpha = .6, width = 0.5) +
+  scale_color_brewer(type='qual') +
+  geom_smooth(method=loess, aes(color='Regressão Polinomial') )+
+  labs(title="Gráfico de dispersão do total de" ~ SO[2] ~ "[mg/" ~ dm^3 ~ "] por Álcool [%]",
+       x= "Álcool [%]",
+       y="Total " ~ SO[2] ~ "[mg/" ~ dm^3 ~ "]")
+```
+
+### Descrição do Primeiro Gráfico
+
+- Nesse gráfico, vemos que a maior concentração das notas boas [7 (amarelo) e 8 (azul)] tendem a terem a maior graduação alcóolica e menor taxa de $SO_{2}$ total.
+
+### Segundo Gráfico
+
+```{r echo=FALSE, Plot_Two, fig.width=9, fig.height=5}
+# Plotando um gráfico de Dispersão
+ggplot(data = wine_clean, aes(colour = as.factor(quality), y = sulphates , x = alcohol, group=1)) +
+  geom_jitter( alpha = .5, width = 0.5) +
+  scale_y_log10()+
+  scale_color_brewer(type='qual') +
+  geom_smooth(method=loess, aes(color='Regressão Polinomial') )+
+  labs(title="Gráfico de dispersão de Sulfatos(log10)[g/" ~ dm^3 ~ "] por Álcool [%]",
+       x="Álcool [%]",
+       y="Sulfatos [g/" ~ dm^3 ~ "]")
+```
+
+### Descrição do Segundo Gráfico
+- Nesse gráfico, conseguimos notar perfeitamente como a graduação alcóolica interfere na qualidade do vinho. Apesar dos valores de Sulfato variarem, é possível encontrar vinhos nota 8 (azul), quando o sulfato e o álcool são altos, quando o álcool é alto ou quando o sulfato é alto.
+
+### Terceiro Gráfico
+
+```{r echo=FALSE, Plot_Three, fig.width=9, fig.height=5, warning=FALSE, message=FALSE}
+# Plotando gráficos de dispersão e diagrama de caixa  - pH vs Qualidade
+ggplot(data = wine_clean, aes(x = quality, y = pH, fill=as.factor(quality) ) ) +
+  geom_jitter( width = 0.25, 
+               alpha = .2) +
+  geom_boxplot(alpha = .3,
+               color = 'blue1') +
+  scale_colour_manual(name="Linhas",
+                      values=c(valores_máximos="darkorange", 
+                               valores_médios="darkolivegreen4", 
+                               valores_mínimos="darkred"))+
+  scale_x_continuous(breaks=1:10) +
+  labs(x="Qualidade", y="pH") +
+  labs(title="Histograma do pH dos vinhos por nota de qualidade")
+```
+
+### Descrição do Terceiro Gráfico
+
+- Eu acho bastante interessante esse gráfico, pois ele mostra perfeitamente como é difícil fazer um bom vinho. A acidez do vinho, que não varia somente durante o processo de produção do vinho, mas como também no processo de amadurecimento das uvas em relação ao clima em que elas foram cultivadas. 
+
+- Isso mostra, que não somente a produção, mas como também a obtenção das uvas é um processo complexo e que depende de vários fatores para proporcionar um vinho de ótima qualidade.
+
+- Apesar da estreita faixa de valores quando a nota é 8, ainda há muitos valores de outras notas compreendidos na mesma faixa, tornando-se o pH uma variável que não influencia tanto na compreensão das qualidades dos vinhos.
+
+# Reflexão
+
+O dataset possui 4898 amostras de vinhos, cada um com 12 variáveis cada. Precisei estudar mais sobre como essas variáveis alteram a percepção do paladar final do vinho. Para a minha surpresa, haviam bastantes coisas que faziam sentido nos dados. Como por exemplo, a relação da graduação alcóolica com a qualidade, com o açúcar residual e com a densidade.
+
+Vimos que nos gráficos da distribuição das característcas, a maioria dos gráficos eram assimétricos positivos, mostrando uma tendência dos vinhos a possuírem algumas características básicas. Um diferencial foi a análise da matriz de correlação, que mostrou baixíssima correlação entre os ácidos e a qualidade do vinho.
+
+A limitação da análise a somente vinhos portugueses, brancos e quase nenhum vinho doce, fez com que muitas variáveis pendessem mais para certos valores, tornando a análise assim bem específica, considerando a quantidade de vinhos e características que eles poderiam possuir, através da variedade de uvas e características climáticas.
+
+Para uma análise futura, seria interessante que o dataset houvesse classes balanceadas, para que houvesse a correta predição das características e não houvesse tendências devido a insuficiência dos dados. Outra coisa a ser considerada, seria a adição de vinhos que fossem doces, para que houvesse também uma comparação se o açúcar residual é realmente um fator decisivo, na consideração da nota de qualidade.
+
+# Referências
+
+https://www.r-bloggers.com/how-to-make-a-histogram-with-ggplot2/
+
+http://www.r-graph-gallery.com/wp-content/uploads/2015/10/42_some_colors_name.png
+
+https://cengel.github.io/R-data-wrangling/data-visualization-with-ggplot2.html
+
+https://www.r-bloggers.com/how-to-make-a-histogram-with-ggplot2/
+
+http://jamesmarquezportfolio.com/correlation_matrices_in_r.html
+
+https://ggplot2.tidyverse.org/reference/stat_summary.html
+
+https://www.ensinoeinformacao.com/estatist-prob-curso-assimetria
+
+http://seer.fcfar.unesp.br/rcfba/index.php/rcfba/article/viewFile/546/pdf546
+
+https://www.decanter.com/learn/wine-terminology/sulfites-in-wine-friend-or-foe-295931/
+
+https://winefolly.com/review/understanding-acidity-in-wine/
+
+https://winepedia.com.br/curiosidades/o-acucar-vinho/
+
+http://waterhouse.ucdavis.edu/whats-in-wine/sulfites-in-wine
+
+http://padamson.github.io/r/ggally/ggplot2/ggpairs/2016/02/16/multiple-regression-lines-with-ggpairs.html
+
+http://www.leg.ufpr.br/Rpira/Rpira/node11.html
+
+https://stackoverflow.com/questions/40229620/r-removing-all-outliers-from-a-data-set
+
+https://stackoverflow.com/questions/4862178/remove-rows-with-all-or-some-nas-missing-values-in-data-frame
+
